@@ -10,7 +10,9 @@ Should be pretty straightforward-- download the contents of the main-sketch fold
 </script>
 ```
 See demo.html for uh, a demo.
+
 The sketch will be placed into the HTML element specified in `container-id` and set up to be a absolute-positioned background element.
+
 It will also give the container element position:relative, so heads up!
 
 Based on the file system you're working on URLs may need to change in sketch.js. All external URLs are done in the `preload()` function (lines 45-48)
