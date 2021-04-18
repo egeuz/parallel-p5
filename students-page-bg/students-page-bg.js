@@ -13,8 +13,8 @@ document.body.appendChild(canvasBG)
 let mainPG, img1, img2, bgImage1, bgImage2, glitchShader
 
 function preload() {
-  img1 = loadImage("./img-1.png")
-  img2 = loadImage("./img-2.png")
+  img1 = loadImage("./img-students-1.png")
+  img2 = loadImage("./img-students-2.png")
   glitchShader = loadShader("./glitch.vert", "./glitch.frag")
 }
 
@@ -25,21 +25,21 @@ function setup() {
   mainPG = createGraphics(w, h)
   bgImage1 = new BGImage({
     img: img1,
-    xpos: "left",
+    xpos: "right",
     ypos: "top",
-    ratio: 0.62,
+    ratio: 0.58,
     minWidth: 400,
-    maxWidth: 992
+    maxWidth: 900
   })
 
   bgImage2 = new BGImage({
     img: img2,
-    xpos: "right",
+    xpos: "left",
     ypos: "bottom",
-    ymargin: 80,
-    ratio: 0.635,
-    minWidth: 400,
-    maxWidth: 1016
+    ymargin: 250,
+    ratio: 0.235,
+    minWidth: 250,
+    maxWidth: 400
   })
 }
 
@@ -56,7 +56,7 @@ function draw() {
   glitchShader.setUniform("iResolution", [width, height]);
   glitchShader.setUniform("iFrame", frameCount);
   glitchShader.setUniform("iMouse", [mouseX, mouseY]);
-  glitchShader.setUniform("iTime", frameCount * 0.00000004);
+  glitchShader.setUniform("iTime", frameCount * 0.00000001);
   glitchShader.setUniform("iChannel0", mainPG);
   bgImage1.render()
   bgImage2.render()

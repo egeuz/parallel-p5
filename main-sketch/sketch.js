@@ -91,7 +91,7 @@ function draw() {
   glitchShader.setUniform("iResolution", [width, height]);
   glitchShader.setUniform("iFrame", frameCount);
   glitchShader.setUniform("iMouse", [mouseX, mouseY]);
-  glitchShader.setUniform("iTime", frameCount * 0.000001);
+  glitchShader.setUniform("iTime", frameCount * 0.0000001);
   glitchShader.setUniform("iChannel0", pg);
   //render p5 graphics (into graphics buffer)
   baseImage.render()
