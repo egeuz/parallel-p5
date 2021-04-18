@@ -6,6 +6,7 @@ canvasBG.style.height = "100%"
 canvasBG.style.position = "absolute"
 canvasBG.style.top = "0"
 canvasBG.style.left = "0"
+canvasBG.style.zIndex = "-1"
 canvasBG.style.transform = "rotateX(180deg)"
 document.body.appendChild(canvasBG)
 
@@ -20,7 +21,7 @@ function preload() {
 
 function setup() {
   pixelDensity(1)
-  const {clientWidth: w, clientHeight: h} = document.body;
+  const {clientWidth: w, clientHeight: h} = canvasBG;
   createCanvas(w, h, WEBGL).parent("canvas-bg")
   mainPG = createGraphics(w, h)
   bgImage1 = new BGImage({
@@ -44,7 +45,7 @@ function setup() {
 }
 
 function windowResized() {
-  const {clientWidth: w, clientHeight: h} = document.body;
+  const {clientWidth: w, clientHeight: h} = canvasBG;
   resizeCanvas(w, h)
   mainPG = createGraphics(w, h)
 }

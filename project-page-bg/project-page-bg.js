@@ -3,7 +3,7 @@ const canvasBG = document.createElement("div")
 canvasBG.id = "canvas-bg"
 canvasBG.style.width = "100%"
 canvasBG.style.height = "100%"
-canvasBG.style.position = "absolute"
+canvasBG.style.position = "fixed"
 canvasBG.style.top = "0"
 canvasBG.style.left = "0"
 canvasBG.style.zIndex = "-1"
@@ -11,11 +11,10 @@ canvasBG.style.transform = "rotateX(180deg)"
 document.body.appendChild(canvasBG)
 
 /*** P5 RUNTIME ***/
-let mainPG, img1, img2, bgImage1, bgImage2, glitchShader
+let mainPG, img1, img2, bgImage1, glitchShader
 
 function preload() {
-  img1 = loadImage("./img-students-1.png")
-  img2 = loadImage("./img-students-2.png")
+  img1 = loadImage("./img-project-1.png")
   glitchShader = loadShader("./glitch.vert", "./glitch.frag")
 }
 
@@ -28,19 +27,9 @@ function setup() {
     img: img1,
     xpos: "right",
     ypos: "top",
-    ratio: 0.58,
-    minWidth: 400,
-    maxWidth: 900
-  })
-
-  bgImage2 = new BGImage({
-    img: img2,
-    xpos: "left",
-    ypos: "bottom",
-    ymargin: 250,
-    ratio: 0.235,
-    minWidth: 250,
-    maxWidth: 400
+    ratio: 0.8,
+    minWidth: 380,
+    maxWidth: 1250
   })
 }
 
@@ -60,7 +49,7 @@ function draw() {
   glitchShader.setUniform("iTime", frameCount * 0.00000001);
   glitchShader.setUniform("iChannel0", mainPG);
   bgImage1.render()
-  bgImage2.render()
+  // bgImage2.render()
   rect(0, 0, width, height)
 }
 

@@ -1,3 +1,5 @@
+//shader code by: glitch2 by Coolok
+//https://www.shadertoy.com/view/4dXBW2
 #ifdef GL_ES
 precision mediump float;
 #endif
