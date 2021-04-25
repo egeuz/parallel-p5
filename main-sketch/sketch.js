@@ -95,20 +95,16 @@ function draw() {
   glitchShader.setUniform("iResolution", [width, height]);
   glitchShader.setUniform("iFrame", frameCount);
   glitchShader.setUniform("iMouse", [mouseX, mouseY]);
-  glitchShader.setUniform("iTime", frameCount * 0.0000001);
+  glitchShader.setUniform("iTime", frameCount);
   glitchShader.setUniform("iChannel0", pg);
 
-  //CHECK IF MOUSE IS MOVING
+  //SET MOUSE VELOCITY UNIFORM
   const mouseDelta = dist(mouseX, mouseY, prevMouseX, prevMouseY)
-  const mouseIsMoving = mouseDelta < 0 ? 0 : 1;
-  const mouseAcceleration = abs(mouseDelta - prevMouseDelta);
-  glitchShader.setUniform("iMouseIsMoving", mouseIsMoving);
-  glitchShader.setUniform("iMouseVelocity", mouseDelta);
-  glitchShader.setUniform("iMouseAcceleration", mouseAcceleration);
-  glitchShader.setUniform("iTimeScale", 1);
+  const mouseVelocity = map(mouseDelta, 0, width / 2, 0, 1)
+  glitchShader.setUniform("iMouseVelocity", mouseVelocity);
+  glitchShader.setUniform("iTimeScale", 0.02);
   prevMouseX = mouseX;
   prevMouseY = mouseY;
-  prevMouseDelta = mouseDelta;
 
   //render p5 graphics (into graphics buffer)
   baseImage.render()
