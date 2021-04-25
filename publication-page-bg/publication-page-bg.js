@@ -11,7 +11,9 @@ canvasBG.style.transform = "rotateX(180deg)"
 document.body.appendChild(canvasBG)
 
 /*** P5 RUNTIME ***/
-let mainPG, img1, img2, bgImage1, glitchShader
+let mainPG, img1, img2, bgImage1, glitchShader;
+let prevMouseX = 0;
+let prevMouseY = 0;
 
 function preload() {
   img1 = loadImage("./img-publication-1.png")
@@ -48,6 +50,15 @@ function draw() {
   glitchShader.setUniform("iMouse", [mouseX, mouseY]);
   glitchShader.setUniform("iTime", frameCount * 0.00000001);
   glitchShader.setUniform("iChannel0", mainPG);
+
+  //SET MOUSE VELOCITY UNIFORM
+  const mouseDelta = dist(mouseX, mouseY, prevMouseX, prevMouseY)
+  const mouseVelocity = map(mouseDelta, 0, width / 2, 0, 1)
+  glitchShader.setUniform("iMouseVelocity", mouseVelocity);
+  glitchShader.setUniform("iTimeScale", 0.02);
+  prevMouseX = mouseX;
+  prevMouseY = mouseY;
+
   bgImage1.render()
   // bgImage2.render()
   rect(0, 0, width, height)

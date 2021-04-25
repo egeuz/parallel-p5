@@ -10,6 +10,8 @@ uniform int iFrame;
 uniform vec2 iMouse;
 uniform float iTime;
 uniform sampler2D iChannel0;
+uniform float iTimeScale;
+uniform float iMouseVelocity;
 
 float sat( float t ) {
 	return clamp( t, 0.0, 1.0 );
@@ -64,9 +66,14 @@ void main()
 	vec2 uv = gl_FragCoord.xy / iResolution.xy;
     uv.y = uv.y;
 	
-	float time = mod(iTime*100.0, 32.0)/110.0; // + modelmat[0].x + modelmat[0].z;
+	// float time = mod(iTime*100.0, 32.0)/110.0; // + modelmat[0].x + modelmat[0].z;
 
-	float GLITCH = 0.1 + iMouse.x / iResolution.x * 0.1;
+	// float GLITCH = 0.1 + iMouse.x / iResolution.x * 0.1;
+
+  float time = floor(iTime*iTimeScale);
+    
+    float GLITCH_VELOCITY_OFFSET = .35*(.5+.5*(sin(iMouseVelocity * 3.141592 - 3.145192*.5)));
+	float GLITCH = 0.05 + GLITCH_VELOCITY_OFFSET;
 	
 	float gnm = sat( GLITCH );
 	float rnd0 = rand( mytrunc( vec2(time, time), 6.0 ) );

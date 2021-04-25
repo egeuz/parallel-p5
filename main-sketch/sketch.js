@@ -39,7 +39,7 @@ const NUM_STRIPS = 8;
 const NUM_HIGH_RES_FRAGMENTS = 15;
 const NUM_LOW_RES_FRAGMENTS = 15;
 const NUM_BLACKOUTS = 16;
-const BLACKOUT_COLOR = "#0a0a0a"
+const BLACKOUT_COLOR = "#090909"
 const ASPECT_RATIO = 1.78;
 //mouse movement variables
 let prevMouseX = 0;
@@ -82,8 +82,8 @@ function windowResized() {
   resizeCanvas(w, h);
   //resize p5 graphics
   // baseImage.resize()
-  // sampleBlocks.forEach(block => block.resize());
-  // blackoutBlocks.forEach(block => block.resize());
+  sampleBlocks.forEach(block => block.resize());
+  blackoutBlocks.forEach(block => block.resize());
 }
 
 function draw() {
@@ -246,11 +246,15 @@ class Area {
 
   getScaledRect(scale) {
 
+    const cw = document.getElementById("canvas-bg").clientWidth;
+    const ch = cw * ASPECT_RATIO;
+
+
     const margin = (1 - scale) / 2; //horizontal margin
-    const w = pg.width * scale;
+    const w = cw * scale;
     const h = w * 1.78; //16:9 aspect ratio -- 0.5625 for horizontal image
-    const x = pg.width * margin;
-    const y = (pg.height - h) / 2;
+    const x = cw * margin;
+    const y = (ch - h) / 2;
     return [x, y, w, h]
   }
 }
@@ -305,11 +309,13 @@ class GlitchBlock {
   }
 
   resize() {
+    const cw = document.getElementById("canvas-bg").clientWidth;
+
     console.log("i happen")
     // this.sampleArea.resize()
     this.renderArea.resize()
-    let newMinSize = width * this.minSizeRatio
-    let newMaxSize = width * this.maxSizeRatio
+    let newMinSize = cw * this.minSizeRatio
+    let newMaxSize = cw * this.maxSizeRatio
     this.minSize = newMinSize;
     this.maxSize = newMaxSize;
     this.init()
