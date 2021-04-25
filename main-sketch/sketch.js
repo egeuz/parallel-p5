@@ -41,6 +41,10 @@ const NUM_LOW_RES_FRAGMENTS = 15;
 const NUM_BLACKOUTS = 16;
 const BLACKOUT_COLOR = "#0a0a0a"
 const ASPECT_RATIO = 1.78;
+//mouse movement variables
+let prevMouseX = 0;
+let prevMouseY = 0;
+let prevMouseDelta = 0;
 
 function preload() {
   baseImageData = loadImage('./base_image.png');
@@ -64,7 +68,7 @@ function setup() {
   pg = createGraphics(w, h, WEBGL);
   pg.imageMode(CENTER);
   //p5 graphics setup
-  baseImage = new BaseImage(baseImageData, 0.9);
+  baseImage = new BaseImage(baseImageData, 1);
   generateSamples();
   generateBlackouts();
 }
@@ -77,9 +81,9 @@ function windowResized() {
   const h = w * ASPECT_RATIO;
   resizeCanvas(w, h);
   //resize p5 graphics
-  baseImage.resize()
-  sampleBlocks.forEach(block => block.resize());
-  blackoutBlocks.forEach(block => block.resize());
+  // baseImage.resize()
+  // sampleBlocks.forEach(block => block.resize());
+  // blackoutBlocks.forEach(block => block.resize());
 }
 
 function draw() {
@@ -93,6 +97,19 @@ function draw() {
   glitchShader.setUniform("iMouse", [mouseX, mouseY]);
   glitchShader.setUniform("iTime", frameCount * 0.0000001);
   glitchShader.setUniform("iChannel0", pg);
+
+  //CHECK IF MOUSE IS MOVING
+  const mouseDelta = dist(mouseX, mouseY, prevMouseX, prevMouseY)
+  const mouseIsMoving = mouseDelta < 0 ? 0 : 1;
+  const mouseAcceleration = abs(mouseDelta - prevMouseDelta);
+  glitchShader.setUniform("iMouseIsMoving", mouseIsMoving);
+  glitchShader.setUniform("iMouseVelocity", mouseDelta);
+  glitchShader.setUniform("iMouseAcceleration", mouseAcceleration);
+  glitchShader.setUniform("iTimeScale", 1);
+  prevMouseX = mouseX;
+  prevMouseY = mouseY;
+  prevMouseDelta = mouseDelta;
+
   //render p5 graphics (into graphics buffer)
   baseImage.render()
   blackoutBlocks.forEach(block => block.render());
@@ -103,8 +120,9 @@ function draw() {
 }
 
 function mouseMoved() {
-  if (random() < 0.85) glitchOut();
+  glitchOut();
 }
+
 /*** END P5 RUNTIME ***/
 
 /**************************/
@@ -153,7 +171,7 @@ function generateSamples() {
 function generateBlackouts() {
   for (let i = 0; i < NUM_BLACKOUTS; i++) {
     const fragment = new GlitchBlock({
-      renderArea: new Area(0.75, 0.55).init(),
+      renderArea: new Area(0.65).init(),
       minSizeRatio: 0.1,
       maxSizeRatio: 0.24
     }).init();
@@ -231,11 +249,12 @@ class Area {
   }
 
   getScaledRect(scale) {
+
     const margin = (1 - scale) / 2; //horizontal margin
-    const w = this.baseW * scale;
+    const w = pg.width * scale;
     const h = w * 1.78; //16:9 aspect ratio -- 0.5625 for horizontal image
-    const x = this.baseW * margin;
-    const y = (this.baseH - h) / 2;
+    const x = pg.width * margin;
+    const y = (pg.height - h) / 2;
     return [x, y, w, h]
   }
 }
@@ -290,6 +309,8 @@ class GlitchBlock {
   }
 
   resize() {
+    console.log("i happen")
+    // this.sampleArea.resize()
     this.renderArea.resize()
     let newMinSize = width * this.minSizeRatio
     let newMaxSize = width * this.maxSizeRatio
@@ -423,8 +444,8 @@ class BaseImage {
   resize() {
     this.x = pg.width / 2;
     this.y = pg.height / 2;
-    this.w = width * this.scale;
-    this.h = width * ASPECT_RATIO * this.scale;
+    this.w = pg.width * this.scale;
+    this.h = pg.width * ASPECT_RATIO * this.scale;
   }
 }
 /*** END CLASSES ***/
