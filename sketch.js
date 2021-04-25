@@ -1,177 +1,180 @@
-/*********************/
-/***** DOM SETUP *****/
-/*********************/
-//setup div to contain p5 canvas
-const canvas = document.createElement("div");
+/*****************/
+/*** DOM SETUP ***/
+/*****************/
+const CANVAS_BREAKPOINT = 700;
+var canvas = document.createElement("div")
 canvas.style.width = "100%";
 canvas.style.height = "100%";
 canvas.style.position = "absolute";
 canvas.style.top = "0";
 canvas.style.left = "0";
 canvas.style.zIndex = "-1";
-canvas.id = "canvas-bg";
+canvas.id = "canvas-bg"
 //handle basic responsiveness for canvas element
 canvas.style.display = window.innerWidth >= 700 ? "block" : "none"
 window.addEventListener("resize", () => {
   canvas.style.display = window.innerWidth >= 700 ? "block" : "none"
 })
-//find and select the element that will contain the sketch
-const containerID = document
-  .querySelector("script[container-id]")
-  .getAttribute("container-id");
+
+/*** GET THE ID OF THE ELEMENT WHERE THE SKETCH WILL LIVE ***/
+let containerID;
+if (document.currentScript) {
+  containerID = document.currentScript.getAttribute("containerID")
+} else {
+  const scripts = document.getElementsByTagName('script');
+  //find this script out of list of scripts
+  scripts.forEach(script => {
+    if (script.getAttribute("containerID")) {
+      containerID = script.getAttribute("containerID")
+    }
+  })
+}
+//change document.body to whatever element we're sticking this into
 const container = document.getElementById(containerID)
 container.style.position = "relative"
 container.appendChild(canvas)
-/*** END DOM SETUP ***/
+/******END DOM SETUP ******/
 
-/**********************/
-/***** P5 RUNTIME *****/
-/**********************/
-//data containers
-let baseImageData;
-let baseImage;
-let sampleBlocks = [];
-let blackoutBlocks = [];
-let pg; //p5 graphics buffer
-let glitchShader;
-//render parameters
+
+/******************/
+/*** P5 RUNTIME ***/
+/******************/
+//base image variables
+let pg;
+const ASPECT_RATIO = 1.78; //0.5625
+const BASE_IMAGE_FILE = "./assets/base_image.png"
+let BASE_IMAGE_DATA; //will contain p5.Image
+let BASE_IMAGE; //will contain BaseImage instance
+
+//glitch block generation vars
 const NUM_STRIPS = 8;
 const NUM_HIGH_RES_FRAGMENTS = 15;
 const NUM_LOW_RES_FRAGMENTS = 15;
 const NUM_BLACKOUTS = 16;
-const BLACKOUT_COLOR = "#090909"
-const ASPECT_RATIO = 1.78;
-//mouse movement variables
-let prevMouseX = 0;
-let prevMouseY = 0;
-let prevMouseDelta = 0;
+const sampleBlocks = []
+const blackoutBlocks = []
+
+//glitch shader variables
+let glitchShader;
 
 function preload() {
-  baseImageData = loadImage('./base_image.png');
-  glitchShader = loadShader('./glitch.vert', './glitch.frag');
+  BASE_IMAGE_DATA = loadImage("./assets/base_image.png")
+  glitchShader = loadShader("./shader/glitch.vert", "./shader/glitch.frag")
 }
 
 function setup() {
-  //shader config
-  if (isRetinaDisplay()) pixelDensity(1);
-  setAttributes({});
-  //p5 config
-  frameRate(24);
-  rectMode(CENTER);
-  imageMode(CENTER);
-  noStroke();
-  //canvas setup
-  const w = document.getElementById("canvas-bg").clientWidth;
-  const h = w * ASPECT_RATIO;
-  createCanvas(w, h, WEBGL).parent("canvas-bg");
-  //graphics buffer config
-  pg = createGraphics(w, h, WEBGL);
-  pg.imageMode(CENTER);
-  //p5 graphics setup
-  baseImage = new BaseImage(baseImageData, 1);
-  generateSamples();
-  generateBlackouts();
+  if (isRetinaDisplay()) pixelDensity(1)
+  setAttributes({})
+  frameRate(24)
+  rectMode(CENTER)
+  imageMode(CENTER)
+  noStroke()
+
+
+  const w = document.getElementById("canvas-bg").clientWidth
+  createCanvas(w, w * ASPECT_RATIO, WEBGL)
+    .parent("canvas-bg")
+
+  pg = createGraphics(w, w * ASPECT_RATIO, WEBGL)
+  pg.imageMode(CENTER)
+
+  BASE_IMAGE = new BaseImage(BASE_IMAGE_DATA, 0.9)
+  generateSamples()
+  generateBlackouts()
 }
 
 function windowResized() {
-  //shader config
-  if (isRetinaDisplay()) pixelDensity(1);
-  //resize canvas
-  const w = document.getElementById("canvas-bg").clientWidth;
-  const h = w * ASPECT_RATIO;
-  resizeCanvas(w, h);
-  //resize p5 graphics
-  // baseImage.resize()
-  sampleBlocks.forEach(block => block.resize());
-  blackoutBlocks.forEach(block => block.resize());
+  if (isRetinaDisplay()) pixelDensity(1)
+  const w = document.getElementById("canvas-bg").clientWidth
+  const h = w * 1.78
+  //for horizontal, replace w/: h = w * ASPECT_RATIO
+  resizeCanvas(w, h)
+
+  BASE_IMAGE.resize()
+  sampleBlocks.forEach(block => {
+    block.resize()
+  })
+  blackoutBlocks.forEach(block => {
+    block.resize()
+  })
 }
 
 function draw() {
-  //delete previous frame contents
-  clear();
-  pg.clear();
-  //apply shader with graphics buffer as channel
+  clear()
+  pg.clear()
   shader(glitchShader)
   glitchShader.setUniform("iResolution", [width, height]);
   glitchShader.setUniform("iFrame", frameCount);
   glitchShader.setUniform("iMouse", [mouseX, mouseY]);
-  glitchShader.setUniform("iTime", frameCount);
+  glitchShader.setUniform("iTime", frameCount * 0.000001);
   glitchShader.setUniform("iChannel0", pg);
-
-  //SET MOUSE VELOCITY UNIFORM
-  const mouseDelta = dist(mouseX, mouseY, prevMouseX, prevMouseY)
-  const mouseVelocity = map(mouseDelta, 0, width / 2, 0, 1)
-  glitchShader.setUniform("iMouseVelocity", mouseVelocity);
-  glitchShader.setUniform("iTimeScale", 0.02);
-  prevMouseX = mouseX;
-  prevMouseY = mouseY;
-
-  //render p5 graphics (into graphics buffer)
-  baseImage.render()
-  blackoutBlocks.forEach(block => block.render());
-  sampleBlocks.forEach(block => block.render());
-  if (noise(frameCount) < 0.25) glitchOut();
-  //render shader onto a canvas-wide rectangle
-  rect(0, 0, width, height);
+  BASE_IMAGE.render()
+  blackoutBlocks.forEach(block => block.render())
+  sampleBlocks.forEach(block => block.render())
+  if (noise(frameCount) < 0.25) glitchOut()
+  rect(0, 0, width, height)
 }
 
 function mouseMoved() {
-  glitchOut();
+  if (random() < 0.85) glitchOut()
 }
 
 /*** END P5 RUNTIME ***/
 
-/**************************/
-/***** HELPER METHODS *****/
-/**************************/
+/************************/
+/*** HELPER FUNCTIONS ***/
+/************************/
+
 function generateSamples() {
   for (let i = 0; i < NUM_STRIPS; i++) {
     const strip = new GlitchStrip({
-      sampleImage: baseImageData,
-      sampleArea: new Area(1, 0.01).init(),
+      sampleImage: BASE_IMAGE_DATA,
+      sampleArea: new Area(1, 0.01, BASE_IMAGE_DATA).init(),
       renderArea: new Area(0.65).init(),
       minSizeRatio: 0.04 * 1.5, //0.04
       maxSizeRatio: 0.017 * 1.5 //0.017
-    }).init();
-    sampleBlocks.push(strip);
+    }).init()
+    sampleBlocks.push(strip)
   }
 
   for (let i = 0; i < NUM_HIGH_RES_FRAGMENTS; i++) {
     const fragment = new GlitchFragment({
-      sampleImage: baseImageData,
-      sampleArea: new Area(1, 0.1).init(),
+      sampleImage: BASE_IMAGE_DATA,
+      sampleArea: new Area(1, 0.1, BASE_IMAGE_DATA).init(),
       renderArea: new Area(0.65).init(),
       minSizeRatio: 0.09 * 1.5,
       maxSizeRatio: 0.16 * 1.5,
       minSampleRatio: 0.2,
       maxSampleRatio: 0.25
-    }).init();
-    sampleBlocks.push(fragment);
+    }).init()
+    sampleBlocks.push(fragment)
   }
 
   for (let i = 0; i < NUM_LOW_RES_FRAGMENTS; i++) {
     const fragment = new GlitchFragment({
-      sampleImage: baseImageData,
-      sampleArea: new Area(1, 0.4).init(),
+      sampleImage: BASE_IMAGE_DATA,
+      sampleArea: new Area(1, 0.4, BASE_IMAGE_DATA).init(),
       renderArea: new Area(0.65).init(),
       minSizeRatio: 0.04 * 1.5,
       maxSizeRatio: 0.07 * 1.5,
       minSampleRatio: 0.1,
       maxSampleRatio: 0.15
-    }).init();
-    sampleBlocks.push(fragment);
+    }).init()
+    sampleBlocks.push(fragment)
   }
+
   shuffle(sampleBlocks)
 }
 
 function generateBlackouts() {
   for (let i = 0; i < NUM_BLACKOUTS; i++) {
     const fragment = new GlitchBlock({
-      renderArea: new Area(0.65).init(),
+      renderArea: new Area(0.75, 0.55).init(),
       minSizeRatio: 0.1,
       maxSizeRatio: 0.24
-    }).init();
-    blackoutBlocks.push(fragment);
+    }).init()
+
+    blackoutBlocks.push(fragment)
   }
 }
 
@@ -189,11 +192,12 @@ function shuffle(array) {
 
 function isRetinaDisplay() {
   if (window.matchMedia) {
-    var mq = window.matchMedia("only screen and (min--moz-device-pixel-ratio: 1.3), only screen and (-o-min-device-pixel-ratio: 2.6/2), only screen and (-webkit-min-device-pixel-ratio: 1.3), only screen  and (min-device-pixel-ratio: 1.3), only screen and (min-resolution: 1.3dppx)");
-    return (mq && mq.matches || (window.devicePixelRatio > 1));
+      var mq = window.matchMedia("only screen and (min--moz-device-pixel-ratio: 1.3), only screen and (-o-min-device-pixel-ratio: 2.6/2), only screen and (-webkit-min-device-pixel-ratio: 1.3), only screen  and (min-device-pixel-ratio: 1.3), only screen and (min-resolution: 1.3dppx)");
+      return (mq && mq.matches || (window.devicePixelRatio > 1));
   }
 }
-/*** END HELPER METHODS ***/
+
+/*** END HELPER FUNCTIONS ***/
 
 /***************/
 /*** CLASSES ***/
@@ -245,16 +249,11 @@ class Area {
   }
 
   getScaledRect(scale) {
-
-    // const cw = document.getElementById("canvas-bg").clientWidth;
-    // const ch = cw * ASPECT_RATIO;
-
-
     const margin = (1 - scale) / 2; //horizontal margin
-    const w = pg.width * scale;
-    const h = pg.height * scale; //16:9 aspect ratio -- 0.5625 for horizontal image
-    const x = pg.width * margin;
-    const y = pg.height * margin;
+    const w = this.baseW * scale;
+    const h = w * 1.78; //16:9 aspect ratio -- 0.5625 for horizontal image
+    const x = this.baseW * margin;
+    const y = (this.baseH - h) / 2;
     return [x, y, w, h]
   }
 }
@@ -302,20 +301,16 @@ class GlitchBlock {
     const { x, y } = this.position;
     const { w, h } = this.size;
     pg.push()
-    pg.fill(BLACKOUT_COLOR)
+    pg.fill("#121212")
     pg.noStroke()
-    pg.rect(x - pg.width / 2, y - pg.height / 2, w, h)
+    pg.rect(x, y, w, h)
     pg.pop()
   }
 
   resize() {
-    const cw = document.getElementById("canvas-bg").clientWidth;
-
-    console.log("i happen")
-    // this.sampleArea.resize()
     this.renderArea.resize()
-    let newMinSize = cw * this.minSizeRatio
-    let newMaxSize = cw * this.maxSizeRatio
+    let newMinSize = width * this.minSizeRatio
+    let newMaxSize = width * this.maxSizeRatio
     this.minSize = newMinSize;
     this.maxSize = newMaxSize;
     this.init()
@@ -375,7 +370,7 @@ class GlitchSample extends GlitchBlock {
     const { w, h } = this.size;
     pg.push()
     pg.noSmooth()
-    pg.image(this.sample, x - pg.width / 2, y - pg.height / 2, w, h)
+    pg.image(this.sample, x - width / 2, y - height / 2, w, h)
     pg.pop()
   }
 }
@@ -413,6 +408,7 @@ class GlitchStrip extends GlitchSample {
 }
 
 class GlitchFragment extends GlitchSample {
+
   constructor(config) {
     super(config)
     this.minSampleRatio = config.minSampleRatio
@@ -446,8 +442,9 @@ class BaseImage {
   resize() {
     this.x = pg.width / 2;
     this.y = pg.height / 2;
-    this.w = pg.width * this.scale;
-    this.h = pg.width * ASPECT_RATIO * this.scale;
+    this.w = width * this.scale;
+    this.h = width * ASPECT_RATIO * this.scale;
   }
 }
+
 /*** END CLASSES ***/
